@@ -10,10 +10,4 @@ class Produto extends Model
         'name','number','active','category','description'
     ];
 
-    public $rules = [
-        'name' => 'required|min:3|max:100',
-        'number' => 'required|numeric',
-        'category' => 'required',
-        'description' => 'required|min:3|max:1000',
-    ];
 }

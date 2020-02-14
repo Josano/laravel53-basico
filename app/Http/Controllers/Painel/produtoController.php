@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Painel;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 Use App\Models\Painel\Produto;
+use App\Http\Requests\Painel\ProdutoFormRequest;
 
 class produtoController extends Controller
 {
 
     private $produto;
+    private $totalPage = 2;
     public function __construct(Produto $produto)
     {
         $this->produto = $produto;
@@ -22,7 +24,8 @@ class produtoController extends Controller
     public function index(Produto $produto)
     {
         $title = 'Listagem de Produtos';
-        $produtos = $this->produto->all();
+        $produtos = $this->produto->paginate($this->totalPage);
+
         return view('painel.produtos.index', compact('produtos','title'));
     }
 
@@ -36,7 +39,7 @@ class produtoController extends Controller
         $title = 'Cadastro de Produtos';
         $categorys = ['eletronicos','moveis','limpeza','banho'];
 
-        return view('painel.produtos.create', compact('title', 'categorys'));
+        return view('painel.produtos.create-edit', compact('title', 'categorys'));
     }
 
     /**
@@ -45,13 +48,11 @@ class produtoController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(ProdutoFormRequest $request)
     {
         $dataFor = $request->all();
 
         $dataFor['active'] = ( !isset($dataFor['active'])) ? 0 : 1;
-
-        $this->validate($request, $this->produto->rules);
 
         $insert = $this->produto->create($dataFor);
 
@@ -71,7 +72,10 @@ class produtoController extends Controller
      */
     public function show($id)
     {
-        //
+        $produto = $this->produto->find($id);
+        $title = "Produto: {$produto->name}";
+
+        return view('painel.produtos.show', compact('title', 'produto'));
     }
 
     /**
@@ -82,7 +86,13 @@ class produtoController extends Controller
      */
     public function edit($id)
     {
-        //
+        $produto = $this->produto->find($id);
+        $title = "Editar Produto: {$produto->name}";
+        $categorys = ['eletronicos','moveis','limpeza','banho'];
+
+        return view('painel.produtos.create-edit', compact('title', 'categorys', 'produto'));
+
+
     }
 
     /**
@@ -92,9 +102,20 @@ class produtoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(ProdutoFormRequest $request, $id)
     {
-        //
+        $dataFor = $request->all();
+
+        $produto = $this->produto->find($id);
+
+        $dataFor['active'] = ( !isset($dataFor['active'])) ? 0 : 1;
+
+        $update = $produto->update($dataFor);
+
+        if($update)
+            return redirect()->route('produtos.index');
+        else
+            return redirect()->route('produtos.edit', $id)->with(['errros' => 'Falha ao editar']);
     }
 
     /**
@@ -105,6 +126,13 @@ class produtoController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $produto = $this->produto->find($id);
+
+        $delete = $produto->delete();
+
+        if($delete)
+            return redirect()->route('produtos.index');
+        else
+            return redirect()->route('produtos.show', $id)->with(['errros' => 'Falha ao deletar']);
     }
 }
